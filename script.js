@@ -7,8 +7,8 @@ const aspect = width / height;
 const frustumSize = 10;
 
 const camera = new THREE.OrthographicCamera(
-    frustumSize * aspect / -2,
-    frustumSize * aspect / 2,
+    (frustumSize * aspect) / -2,
+    (frustumSize * aspect) / 2,
     frustumSize / 2,
     frustumSize / -2,
     0.1,
@@ -20,7 +20,7 @@ camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(width, height);
-renderer.setClearColor(0x000000, 0); // Прозрачный фон
+renderer.setClearColor(0x000000, 0);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.shadowMap.enabled = true;
@@ -43,8 +43,8 @@ scene.add(directionalLight);
 let windowHalfX = window.innerWidth / 2;
 let windowHalfY = window.innerHeight / 2;
 let spacingFactor = 0;
-let targetRotationX = 0;
-let targetRotationZ = 0;
+let targetRotationY = 0;
+let baseCardY = 0;
 
 let model;
 const cardData = [];
@@ -89,20 +89,29 @@ loader.load(
             return numA - numB;
         });
 
-        for (let i = 0; i < sortedCards.length; i++) {
+        const totalCards = sortedCards.length;
+        const centerIndex = 4; // Оранжевая карточка — Card_5, индекс с нуля
+
+        for (let i = 0; i < totalCards; i++) {
             const mesh = sortedCards[i];
             const baseY = mesh.position.y;
-            let distanceToNext = 0;
 
-            if (i < sortedCards.length - 1) {
-                distanceToNext = sortedCards[i + 1].position.y - baseY;
-            }
+            const distanceFromCenter = Math.abs(i - centerIndex);
+            const spacingMultiplier = distanceFromCenter / centerIndex; // 1 у крайних, 0 у оранжевой
 
             cardData.push({
                 mesh,
                 baseY,
-                distanceToNext
+                spacingMultiplier,
+                targetYRotation: 0,
+                currentYRotation: 0,
+                delay: Math.random() * 300 + 200, // 200 - 500 мс задержка
+                speed: Math.random() * 0.05 + 0.05
             });
+
+            if (i === centerIndex) {
+                baseCardY = baseY;
+            }
         }
 
         document.getElementById('loading').style.display = 'none';
@@ -115,16 +124,19 @@ loader.load(
 );
 
 // Mouse move
-window.addEventListener('mousemove', onDocumentMouseMove);
+document.addEventListener('mousemove', onDocumentMouseMove);
 
 function onDocumentMouseMove(event) {
-    const normalizedY = (windowHalfY - event.clientY) / windowHalfY;
-    spacingFactor = Math.max(normalizedY, 0);
-    spacingFactor = Math.min(spacingFactor, 1);
+    const mouseY = event.clientY;
+    const mouseX = event.clientX;
 
-    const normalizedX = (event.clientX - windowHalfX) / windowHalfX;
-    targetRotationX = normalizedY * 4 * (Math.PI / 180);
-    targetRotationZ = normalizedX * 4 * (Math.PI / 180);
+    const modelScreenY = window.innerHeight / 2;
+    const maxDistanceY = window.innerHeight / 2;
+    const distanceY = Math.min(Math.abs(mouseY - modelScreenY), maxDistanceY);
+    spacingFactor = distanceY / maxDistanceY;
+
+    const normalizedX = (mouseX - windowHalfX) / windowHalfX;
+    targetRotationY = -normalizedX * 7 * (Math.PI / 180);
 }
 
 // Resize
@@ -133,8 +145,8 @@ window.addEventListener('resize', onWindowResize);
 function onWindowResize() {
     const aspect = window.innerWidth / window.innerHeight;
 
-    camera.left = -frustumSize * aspect / 2;
-    camera.right = frustumSize * aspect / 2;
+    camera.left = (-frustumSize * aspect) / 2;
+    camera.right = (frustumSize * aspect) / 2;
     camera.top = frustumSize / 2;
     camera.bottom = -frustumSize / 2;
 
@@ -153,21 +165,17 @@ function animate() {
             const data = cardData[i];
             const mesh = data.mesh;
 
-            if (i === 0) {
-                mesh.position.y = data.baseY;
-            } else {
-                const prev = cardData[i - 1];
-                const baseSpacing = prev.distanceToNext;
-                const extraSpacing = baseSpacing * 0.5 * spacingFactor;
-                mesh.position.y = prev.mesh.position.y + baseSpacing + extraSpacing;
-            }
+            const direction = Math.sign(data.baseY - baseCardY);
+            const offset = direction * spacingFactor * 0.5 * data.spacingMultiplier;
 
-            mesh.rotation.x += (targetRotationX - mesh.rotation.x) * 0.1;
-            mesh.rotation.z += (targetRotationZ - mesh.rotation.z) * 0.1;
+            mesh.position.y += (data.baseY + offset - mesh.position.y) * 0.1;
 
-            const direction = (i % 2 === 0) ? 1 : -1;
-            const targetRotationY = spacingFactor * direction * (Math.PI / 180);
-            mesh.rotation.y += (targetRotationY - mesh.rotation.y) * 0.1;
+            setTimeout(() => {
+                data.targetYRotation = targetRotationY;
+            }, data.delay);
+
+            data.currentYRotation += (data.targetYRotation - data.currentYRotation) * data.speed;
+            mesh.rotation.y = data.currentYRotation;
         }
     }
 
