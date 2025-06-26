@@ -115,7 +115,7 @@ loader.load(
 );
 
 // Mouse move
-document.addEventListener('mousemove', onDocumentMouseMove);
+window.addEventListener('mousemove', onDocumentMouseMove);
 
 function onDocumentMouseMove(event) {
     const normalizedY = (windowHalfY - event.clientY) / windowHalfY;
