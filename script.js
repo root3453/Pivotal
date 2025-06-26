@@ -18,9 +18,9 @@ const camera = new THREE.OrthographicCamera(
 camera.position.set(2, 8, 3);
 camera.lookAt(0, 0, 0);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(width, height);
-renderer.setClearColor(0xffffff);
+renderer.setClearColor(0x000000, 0); // Прозрачный фон
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.shadowMap.enabled = true;
