@@ -166,12 +166,16 @@ function animate() {
             const mesh = data.mesh;
 
             const direction = Math.sign(data.baseY - baseCardY);
-            const offset = direction * spacingFactor * 0.5 * data.spacingMultiplier;
+            const safeOffsetLimit = Math.abs(data.baseY - baseCardY) * 0.9; // безопасный лимит смещения
+            const rawOffset = direction * spacingFactor * 1.2 * data.spacingMultiplier; // усиленное смещение
+            const offset = Math.max(-safeOffsetLimit, Math.min(rawOffset, safeOffsetLimit)); // ограничение, чтобы не наползали
 
             mesh.position.y += (data.baseY + offset - mesh.position.y) * 0.1;
 
             setTimeout(() => {
-                data.targetYRotation = targetRotationY;
+                // Поворот по оси Y с дополнительным эффектом в крайних положениях
+                const extraRotation = (spacingFactor > 0.95) ? THREE.MathUtils.degToRad(2) * direction : 0;
+                data.targetYRotation = targetRotationY + extraRotation;
             }, data.delay);
 
             data.currentYRotation += (data.targetYRotation - data.currentYRotation) * data.speed;
@@ -181,5 +185,6 @@ function animate() {
 
     renderer.render(scene, camera);
 }
+
 
 animate();
