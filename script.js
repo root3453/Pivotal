@@ -166,25 +166,30 @@ function animate() {
             const mesh = data.mesh;
 
             const direction = Math.sign(data.baseY - baseCardY);
-            const safeOffsetLimit = Math.abs(data.baseY - baseCardY) * 0.9; // безопасный лимит смещения
-            const rawOffset = direction * spacingFactor * 1.2 * data.spacingMultiplier; // усиленное смещение
-            const offset = Math.max(-safeOffsetLimit, Math.min(rawOffset, safeOffsetLimit)); // ограничение, чтобы не наползали
+            const safeOffsetLimit = Math.abs(data.baseY - baseCardY) * 0.9;
+            const rawOffset = direction * spacingFactor * 1.2 * data.spacingMultiplier;
+            const offset = Math.max(-safeOffsetLimit, Math.min(rawOffset, safeOffsetLimit));
 
             mesh.position.y += (data.baseY + offset - mesh.position.y) * 0.1;
 
             setTimeout(() => {
-                // Поворот по оси Y с дополнительным эффектом в крайних положениях
-                const extraRotation = (spacingFactor > 0.95) ? THREE.MathUtils.degToRad(2) * direction : 0;
-                data.targetYRotation = targetRotationY + extraRotation;
+                const extraYRotation = (spacingFactor > 0.95) ? THREE.MathUtils.degToRad(2) * direction : 0;
+                data.targetYRotation = targetRotationY + extraYRotation;
             }, data.delay);
 
             data.currentYRotation += (data.targetYRotation - data.currentYRotation) * data.speed;
             mesh.rotation.y = data.currentYRotation;
+
+            // Новый поворот по оси Z, чередуем знак через индекс
+            const zRotationAmount = spacingFactor * THREE.MathUtils.degToRad(2);
+            const zSign = (i % 2 === 0) ? 1 : -1;
+            mesh.rotation.z = zRotationAmount * zSign;
         }
     }
 
     renderer.render(scene, camera);
 }
+
 
 
 animate();
