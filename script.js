@@ -6,12 +6,15 @@ const height = window.innerHeight;
 const aspect = width / height;
 const frustumSize = 10;
 
-const fov = 20; // узкий угол обзора, чтобы минимизировать искажения
-const aspect = window.innerWidth / window.innerHeight;
-const near = 0.1;
-const far = 500;
+const camera = new THREE.OrthographicCamera(
+    (frustumSize * aspect) / -2,
+    (frustumSize * aspect) / 2,
+    frustumSize / 2,
+    frustumSize / -2,
+    0.1,
+    500
+);
 
-const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 camera.position.set(2, 8, 3);
 camera.lookAt(0, 0, 0);
 
